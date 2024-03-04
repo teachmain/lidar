@@ -66,6 +66,8 @@ def decodeSection(section):
             continue
         else:
             distance = (section[10+2*i] >> 2) + section[11+2*i] * 64
+            if distance < 100:
+                continue
             angle = startAngle + i*stepAngle
 
             if distance != 0:
@@ -83,8 +85,8 @@ def decodeSection(section):
 
             angle /= 180
             angle *= math.pi
-            x = math.cos(angle) * distance
-            y = math.sin(angle) * distance
+            x = - math.cos(angle) * distance
+            y = - math.sin(angle) * distance
             result.append([x,y])
     return result
 
@@ -123,12 +125,27 @@ def combine(points,ref_distance):
         result.append([avg_x,avg_y])
     return result
 
+def clamp(input,min,max):
+    if input < min:
+        return min
+    if input > max:
+        return max
+    return input
 
+def clampPoint(low_x,high_x,low_y,high_y,points):
+    result = []
+    for point in points:
+        if point[0] < low_x or point[0] > high_x or point[1] < low_y or point[1] > high_y:
+            continue
+        new_x = (point[0] - low_x) / (high_x - low_x)
+        new_y = (point[1] - low_y) / (high_y - low_y)
+        result.append([new_x,new_y])
+    return result
+
+        
 
 
         
-        
-
 
 plot.ion()
 fig,ax = plot.subplots()
@@ -139,16 +156,19 @@ while True:
     points = numpy.array(result)
     if len(points) == 0:
         continue
-    points = combine(points,100)
-    points = numpy.array(points)
-    print(points.shape)
-    points = points.T
-    plot.cla()
-    ax.set_xlim(-500,500)
-    ax.set_ylim(-500,500)
-    plot.scatter(points[0],points[1])
-    plot.pause(0.001)
+    points = clampPoint(-280,300,150,500,points)
+    points = combine(points,0.2)
+    if len(points) == 0:
+        continue
+    # points = numpy.array(points)
+    #points = points.T
+    #plot.cla()
+    #ax.set_xlim(0,1)
+    #ax.set_ylim(0,1)
+    #plot.scatter(points[0],points[1])
+    #plot.pause(0.001)
     #print(pyautogui.position())
+    pyautogui.moveTo(3839*points[0][0], 2159*(1-points[0][1]))
     
     
     
